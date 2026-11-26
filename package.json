@@ -1,0 +1,23 @@
+{
+  "name": "tracepilot-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TracePilot - AI-assisted debugging platform",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "demo"
+  ],
+  "scripts": {
+    "start": "cmd /c start.bat",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "demo": "npm run start --workspace=demo",
+    "seed": "npm run seed --workspace=apps/api"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}

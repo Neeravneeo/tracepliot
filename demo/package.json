@@ -1,0 +1,21 @@
+{
+  "name": "tracepilot-demo-app",
+  "version": "1.0.0",
+  "description": "TracePilot Demo Application with intentional exception scenario",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsx src/index.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@tracepilot/sdk": "*",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
+  }
+}

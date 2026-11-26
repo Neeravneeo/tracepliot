@@ -1,0 +1,43 @@
+name: TracePilot CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  verify:
+    name: Build, Lint, Typecheck, Security & Test Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build packages and generate Prisma client
+        run: npm run build
+
+      - name: Run Secret Scanning & Configuration Validation
+        run: npx vitest run apps/api/src/config.test.ts
+
+      - name: Run Multi-Tenant Authorization Regression Suite
+        run: npx vitest run apps/api/src/authorization.test.ts
+
+      - name: Run Website Scanner E2E & SSRF Safety Suite
+        run: npx vitest run apps/api/src/scanner-e2e.test.ts
+
+      - name: Run SDK Client Tests
+        run: npm --prefix packages/sdk test
+
+      - name: Run Core API Tests
+        run: npm --prefix apps/api test

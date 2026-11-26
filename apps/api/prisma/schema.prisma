@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  projects     Project[]
+
+  @@map("users")
+}
+
+model Project {
+  id          String        @id @default(uuid())
+  name        String
+  ownerId     String?       @map("owner_id")
+  owner       User?         @relation(fields: [ownerId], references: [id])
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  incidents   Incident[]
+  apiKeys     ApiKey[]
+  environments Environment[]
+  websites    Website[]
+  scans       WebsiteScan[]
+
+  @@map("projects")
+}
+
+model ApiKey {
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  keyHash     String    @unique @map("key_hash")
+  name        String
+  createdAt   DateTime  @default(now()) @map("created_at")
+  revokedAt   DateTime? @map("revoked_at")
+
+  @@index([projectId])
+  @@map("api_keys")
+}
+
+model Environment {
+  id          String   @id @default(uuid())
+  projectId   String   @map("project_id")
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([projectId, name])
+  @@map("environments")
+}
+
+model Incident {
+  id            String   @id @default(uuid())
+  projectId     String   @map("project_id")
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  fingerprint   String
+  eventType     String   @default("exception") @map("event_type")
+  exceptionType String   @map("exception_type")
+  message       String   @db.Text
+  stackTrace    String?  @map("stack_trace") @db.Text
+  environment   String
+  release       String
+  runtime       Json     @map("runtime_json")
+  context       Json?    @map("context_json")
+  occurredAt    DateTime @map("occurred_at")
+  status        String   @default("unresolved")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([projectId])
+  @@index([fingerprint])
+  @@index([status])
+  @@index([occurredAt])
+  @@map("incidents")
+}
+
+model Website {
+  id                 String        @id @default(uuid())
+  projectId          String        @map("project_id")
+  project            Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy          String?       @map("created_by")
+  domain             String
+  normalizedBaseUrl  String        @map("normalized_base_url")
+  verificationStatus String        @default("pending") @map("verification_status") // pending, verified, failed
+  verificationMethod String        @default("token") @map("verification_method") // token, dns
+  verificationToken  String        @map("verification_token")
+  verifiedAt         DateTime?     @map("verified_at")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  scans              WebsiteScan[]
+  findings           ScanFinding[]
+
+  @@unique([projectId, domain])
+  @@index([projectId])
+  @@map("websites")
+}
+
+model WebsiteScan {
+  id                String        @id @default(uuid())
+  websiteId         String        @map("website_id")
+  website           Website       @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  projectId         String        @map("project_id")
+  project           Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  initiatedBy       String?       @map("initiated_by")
+  scanType          String        @default("quick") @map("scan_type") // quick, standard, deep
+  status            String        @default("pending") // pending, verifying, preparing, crawling, testing, analyzing, generating_report, completed, partially_completed, failed, cancelled
+  configurationJson Json          @map("configuration_json")
+  startedAt         DateTime?     @map("started_at")
+  completedAt       DateTime?     @map("completed_at")
+  pagesDiscovered   Int           @default(0) @map("pages_discovered")
+  pagesScanned      Int           @default(0) @map("pages_scanned")
+  healthScore       Float?        @map("health_score")
+  coverageJson      Json?         @map("coverage_json")
+  errorSummary      String?       @map("error_summary") @db.Text
+  createdAt         DateTime      @default(now()) @map("created_at")
+  pages             ScannedPage[]
+  findings          ScanFinding[]
+  report            ScanReport?
+
+  @@index([websiteId])
+  @@index([projectId])
+  @@index([status])
+  @@map("website_scans")
+}
+
+model ScannedPage {
+  id              String        @id @default(uuid())
+  scanId          String        @map("scan_id")
+  scan            WebsiteScan   @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  normalizedUrl   String        @map("normalized_url")
+  httpStatus      Int?          @map("http_status")
+  pageTitle       String?       @map("page_title")
+  loadMetricsJson Json?         @map("load_metrics_json")
+  screenshotRef   String?       @map("screenshot_ref") @db.Text
+  scanStatus      String        @default("scanned") @map("scan_status")
+  errorMessage    String?       @map("error_message") @db.Text
+  scannedAt       DateTime      @default(now()) @map("scanned_at")
+  findings        ScanFinding[]
+
+  @@index([scanId])
+  @@index([normalizedUrl])
+  @@map("scanned_pages")
+}
+
+model ScanFinding {
+  id                   String         @id @default(uuid())
+  scanId               String         @map("scan_id")
+  scan                 WebsiteScan    @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  websiteId            String         @map("website_id")
+  website              Website        @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  pageId               String?        @map("page_id")
+  page                 ScannedPage?   @relation(fields: [pageId], references: [id], onDelete: SetNull)
+  issueFingerprint     String         @map("issue_fingerprint")
+  title                String
+  description          String         @db.Text
+  category             String         // javascript, broken_links, assets, functional, responsive, accessibility, performance, security, seo
+  severity             String         // critical, high, medium, low
+  confidence           String         @default("high") // high, medium, low
+  verificationStatus   String         @default("confirmed") @map("verification_status") // confirmed, suspected, needs_review
+  expectedBehavior     String?        @map("expected_behavior") @db.Text
+  actualBehavior       String?        @map("actual_behavior") @db.Text
+  reproductionSteps    Json?          @map("reproduction_steps_json")
+  evidenceJson         Json?          @map("evidence_json")
+  suggestedFix         String?        @map("suggested_fix") @db.Text
+  aiAnalysisJson       Json?          @map("ai_analysis_json")
+  incidentId           String?        @map("incident_id") // ID if converted to native TracePilot Incident
+  firstSeenAt          DateTime       @default(now()) @map("first_seen_at")
+  lastSeenAt           DateTime       @default(now()) @map("last_seen_at")
+  createdAt            DateTime       @default(now()) @map("created_at")
+  evidence             ScanEvidence[]
+
+  @@index([scanId])
+  @@index([websiteId])
+  @@index([category])
+  @@index([severity])
+  @@index([issueFingerprint])
+  @@map("scan_findings")
+}
+
+model ScanEvidence {
+  id                    String      @id @default(uuid())
+  findingId             String      @map("finding_id")
+  finding               ScanFinding @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  evidenceType          String      @map("evidence_type") // screenshot, console_log, network_payload, dom_snippet
+  storageKey            String      @map("storage_key") @db.Text
+  sanitizedMetadataJson Json?       @map("sanitized_metadata_json")
+  createdAt             DateTime    @default(now()) @map("created_at")
+
+  @@index([findingId])
+  @@map("scan_evidence")
+}
+
+model ScanReport {
+  id                 String      @id @default(uuid())
+  scanId             String      @unique @map("scan_id")
+  scan               WebsiteScan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  summaryJson        Json        @map("summary_json")
+  scoreBreakdownJson Json        @map("score_breakdown_json")
+  coverageJson       Json        @map("coverage_json")
+  generatedAt        DateTime    @default(now()) @map("generated_at")
+  exportStorageKey   String?     @map("export_storage_key")
+
+  @@map("scan_reports")
+}

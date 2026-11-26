@@ -1,0 +1,19 @@
+{
+  "name": "@tracepilot/sdk",
+  "version": "0.1.0",
+  "description": "TracePilot TypeScript SDK for capturing and transmitting application exceptions",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "keywords": ["tracepilot", "apm", "error-tracking", "sdk", "debugging"],
+  "author": "TracePilot Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
+  }
+}

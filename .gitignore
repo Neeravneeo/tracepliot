@@ -1,0 +1,52 @@
+# Dependency directories
+node_modules/
+.pnpm-store/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.env
+
+# Build outputs & archives
+dist/
+build/
+.next/
+out/
+*.tgz
+
+# Vitest and test coverage
+.vitest-cache/
+coverage/
+
+# Documentation, design briefs & starter pack
+docs/
+DESIGN.md
+DESIGN (1).md
+TracePilot_Starter_Pack/
+
+# Unnecessary scratch & one-off test/patch scripts
+apps/api/patch_incidents.js
+apps/api/test-embedding.js
+apps/api/test-gemini.js
+apps/api/test-hf.js
+apps/api/test-models.js
+apps/api/test-openrouter.js
+apps/api/src/scripts/test-phase-b.ts
+apps/api/src/scripts/test-phase-b-legacy.ts
+apps/web/patch_overview.cjs
+
+# OS and IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database & Docker files
+*.db
+*.sqlite
+data/
